@@ -3,7 +3,7 @@
 Vite + React + strict TypeScript frontend for discovering AI websites through FreeSerp.
 
 Run npm install, then npm run dev. Validate with npm run build, npm run lint,
-and npm run test:data (request encoding, response validation, errors, and fallbacks).
+and npm run test:data (request encoding, response validation, errors, fallbacks, and pagination).
 Use npm run preview to preview the production build.
 
 ## Architecture
@@ -34,12 +34,17 @@ updates the API after a 400 ms debounce without scrolling. The query is saved to
 on submit or filter actions (clearing search removes it immediately). A minimum
 workspace height keeps shorter result sets from pulling the controls downward.
 Smooth scrolling respects reduced-motion preferences.
-Initial loading shows six skeleton cards. Refetching retains previous results with an
-Updating indicator. Failures show a retry action; successful empty responses show
+Initial loading shows six skeleton cards. useInfiniteQuery owns catalog pages with
+one 12-result page-size constant. Load More requests the next offset from response
+from/count/total metadata and appends cards. Loaded cards stay visible during next-page
+loading and errors; failures show a compact retry message beside the button.
+The button hides at the end of results or the API's paging window. Search, category,
+DR, and sort changes start at offset zero, with inactive filter pages discarded.
+Initial failures show the full retry state; successful empty responses show
 an empty state. Stats use ai_startups.total and ai_startups.today; unavailable
 metrics and failed statistics are omitted. No category total is inferred from the
 top_ai_categories aggregation. Dates mean discovery, not official product launch.
-Mock cards, fake statistics, and the unused pagination control have been removed.
+Mock cards and fake statistics have been removed.
 Follow [AGENTS.md](./AGENTS.md) for development rules.
 
 ## CORS and deployment
@@ -57,7 +62,7 @@ proxy is not bundled into production. Deployment also needs an SPA fallback to i
 
 ## Next phase
 
-Add Load More and expanded URL synchronization. FreeSerp sites pagination is limited
+Add expanded URL synchronization. FreeSerp sites pagination is limited
 to from + size <= 10,000. Unknown filters are ignored and invalid sorts fall back
 silently, so inspect echoed filters when extending the UI. Newest sites often omit DR,
 and AI niche discovery can also return agencies or research sites.

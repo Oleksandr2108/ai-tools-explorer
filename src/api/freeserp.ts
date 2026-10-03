@@ -4,7 +4,8 @@ const FREESERP_BASE_URL = 'https://freeserp.ai/api.php'
 // FreeSerp currently emits duplicate CORS headers. Vite's scoped proxy is
 // development-only; deployments can supply a same-origin endpoint if needed.
 const endpoint = import.meta.env.VITE_FREESERP_BASE_URL || (import.meta.env.DEV ? '/freeserp-api' : FREESERP_BASE_URL)
-export const DEFAULT_TOOL_PARAMS = { size: 12, from: 0, sort: 'went_live', order: 'desc' } as const
+export const TOOLS_PAGE_SIZE = 12
+export const DEFAULT_TOOL_PARAMS = { size: TOOLS_PAGE_SIZE, from: 0, sort: 'went_live', order: 'desc' } as const
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -63,7 +64,11 @@ export async function getAiTools(params: GetAiToolsParams = {}, signal?: AbortSi
   if (body.index !== 'sites' || !Array.isArray(body.results)) throw new Error('Unable to load AI tools.')
   const results = body.results.map(parseSite).filter((site): site is FreeSerpSite => site !== null)
   if (body.results.length && !results.length) throw new Error('Unable to load AI tools.')
-  return { ok: true, index: 'sites', total: number(body.total), count: number(body.count) ?? results.length, results }
+  return {
+    ok: true, index: 'sites', total: number(body.total),
+    from: number(body.from) ?? values.from ?? DEFAULT_TOOL_PARAMS.from,
+    count: number(body.count) ?? results.length, results,
+  }
 }
 export async function getStats(signal?: AbortSignal): Promise<FreeSerpStats> {
   const body = await request(new URLSearchParams({ index: 'sites', stats: '1' }), 'Unable to load statistics.', signal)

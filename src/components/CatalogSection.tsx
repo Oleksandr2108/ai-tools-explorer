@@ -11,6 +11,7 @@ import { useDebounce } from '../hooks/useDebounce'
 import { mapFreeSerpSiteToTool } from '../utils/mapFreeSerpSiteToTool'
 import { ToolCardSkeleton } from './ToolCardSkeleton'
 import { ErrorState } from './ErrorState'
+import { LoadMore } from './LoadMore'
 import { formatNumber } from '../utils/format'
 
 export function CatalogSection() {
@@ -31,17 +32,17 @@ export function CatalogSection() {
     query: debouncedQuery,
     category: API_CATEGORIES[category],
     minDr: Number(minRating),
-    // Relevance requires search text; browse newest sites when it is empty.
-    sort: sort === 'rating' ? 'dr' : sort === 'relevance' && debouncedQuery.trim() ? 'relevance' : 'went_live',
+    sort: sort === 'rating' ? 'dr' : sort === 'relevance' ? 'relevance' : 'went_live',
   })
-  const tools = result.data?.results.map(mapFreeSerpSiteToTool) ?? []
-  const total = result.data?.total ?? result.data?.count ?? tools.length
+  const tools = (result.data?.pages.flatMap((page) => page.results) ?? []).map(mapFreeSerpSiteToTool)
+  const total = result.data?.pages[0]?.total ?? tools.length
   const updating = result.isFetching || query !== debouncedQuery
+  const firstPageFailed = result.isError && !result.data
 
   let content
   if (result.isPending) {
     content = <div role="status" aria-label="Loading AI tools" className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">{Array.from({ length: 6 }, (_, index) => <ToolCardSkeleton key={index} />)}</div>
-  } else if (result.isError) {
+  } else if (firstPageFailed) {
     content = <ErrorState onRetry={() => { void result.refetch() }} retrying={result.isFetching} />
   } else {
     content = <ToolGrid tools={tools} onReset={resetFilters} />
@@ -115,9 +116,15 @@ export function CatalogSection() {
           <CategoryFilters value={category} onChange={(value) => updateFilter('category', value, 'All')} />
         </div>
         <p role="status" aria-live="polite" className="mb-5 mt-2 text-sm text-muted">
-          {result.isPending ? 'Loading AI tools…' : result.isError ? 'Results unavailable' : <><span className="font-medium text-primary">{formatNumber(total)}</span> {total === 1 ? 'AI tool' : 'AI tools'}<span className="ml-1 text-xs text-subtle">{updating ? 'Updating…' : `Showing ${formatNumber(tools.length)}`}</span></>}
+          {result.isPending ? 'Loading AI tools…' : firstPageFailed ? 'Results unavailable' : <><span className="font-medium text-primary">{formatNumber(total)}</span> {total === 1 ? 'AI tool' : 'AI tools'}<span className="ml-1 text-xs text-subtle">{updating ? 'Updating…' : `Showing ${formatNumber(tools.length)}`}</span></>}
         </p>
         <div aria-busy={updating}>{content}</div>
+        {result.hasNextPage && <LoadMore
+          loading={result.isFetchingNextPage}
+          disabled={updating}
+          failed={result.isFetchNextPageError}
+          onLoadMore={() => { void result.fetchNextPage() }}
+        />}
       </div>
     </section>
   )

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 import ts from 'typescript'
+import { InfiniteQueryObserver, QueryClient } from '@tanstack/react-query'
 
 // Exercise the real API boundary with controlled external responses, without
 // a browser, network dependency, or additional test package.
@@ -11,7 +12,15 @@ async function moduleUrl(path, replacements = []) {
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2023 } })
   return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
 }
-const api = await import(await moduleUrl('api/freeserp.ts', [['import.meta.env', '({ DEV: false })']]))
+const apiUrl = await moduleUrl('api/freeserp.ts', [['import.meta.env', '({ DEV: false })']])
+const api = await import(apiUrl)
+const offsetUrl = await moduleUrl('utils/getNextToolsOffset.ts', [["'../api/freeserp'", JSON.stringify(apiUrl)]])
+const { getNextToolsOffset } = await import(offsetUrl)
+const { toolsQueryOptions } = await import(await moduleUrl('hooks/useTools.ts', [
+  ["'../api/freeserp'", JSON.stringify(apiUrl)],
+  ["'../utils/getNextToolsOffset'", JSON.stringify(offsetUrl)],
+  ["'@tanstack/react-query'", JSON.stringify(import.meta.resolve('@tanstack/react-query'))],
+]))
 const dateUrl = await moduleUrl('utils/formatDate.ts')
 const { formatDate } = await import(dateUrl)
 const { mapFreeSerpSiteToTool, websiteUrl } = await import(await moduleUrl('utils/mapFreeSerpSiteToTool.ts', [["'./formatDate'", JSON.stringify(dateUrl)]]))
@@ -90,6 +99,63 @@ test('stats preserve zero, omit missing metrics and reject malformed snapshots',
   assert.equal((await api.getStats()).today, null)
   respond({ ok: true })
   await assert.rejects(api.getStats(), /Unable to load statistics/)
+})
+
+test('pagination stops at totals, empty pages, short unknown-total pages and the API window', () => {
+  const page = { ...success(), from: 0, count: 12, total: 25 }
+  assert.equal(getNextToolsOffset(page), 12)
+  assert.equal(getNextToolsOffset({ ...page, from: 12 }), 24)
+  assert.equal(getNextToolsOffset({ ...page, from: 24, count: 1 }), undefined)
+  assert.equal(getNextToolsOffset({ ...page, count: 0 }), undefined)
+  assert.equal(getNextToolsOffset({ ...page, count: 3, total: null }), undefined)
+  assert.equal(getNextToolsOffset({ ...page, total: null }), 12)
+  assert.equal(getNextToolsOffset({ ...page, from: 9984, total: 20_000 }), undefined)
+})
+
+test('infinite query appends pages, retains them on next-page failure, retries and resets filters', async () => {
+  const calls = []
+  let failNextPage = true
+  globalThis.fetch = async (url) => {
+    const params = new URL(url).searchParams
+    const from = Number(params.get('from'))
+    calls.push({ from, query: params.get('q'), category: params.get('ai_categories'), dr: params.get('dr_min'), sort: params.get('sort') })
+    assert.equal(params.get('size'), String(api.TOOLS_PAGE_SIZE))
+    if (from === 12 && failNextPage) {
+      failNextPage = false
+      return new Response('{}', { status: 502 })
+    }
+    const count = Math.min(api.TOOLS_PAGE_SIZE, 25 - from)
+    return new Response(JSON.stringify({ ...success(Array.from({ length: count }, (_, i) => ({ domain: `tool-${from + i}.ai` }))), from, count, total: 25 }))
+  }
+  const client = new QueryClient()
+  const options = (params) => ({ ...toolsQueryOptions(params), retry: false })
+  const observer = new InfiniteQueryObserver(client, options({}))
+  const unsubscribe = observer.subscribe(() => {})
+  try {
+    await observer.refetch()
+    assert.equal(observer.getCurrentResult().data.pages[0].results.length, 12)
+    const pending = observer.fetchNextPage({ throwOnError: true })
+    assert.equal(observer.getCurrentResult().isFetchingNextPage, true)
+    assert.equal(observer.getCurrentResult().data.pages[0].results.length, 12)
+    await assert.rejects(pending, /Unable to load AI tools/)
+    assert.equal(observer.getCurrentResult().isFetchNextPageError, true)
+    assert.equal(observer.getCurrentResult().data.pages.length, 1)
+    await observer.fetchNextPage()
+    assert.equal(observer.getCurrentResult().data.pages.flatMap(page => page.results).length, 24)
+    await observer.fetchNextPage()
+    assert.equal(observer.getCurrentResult().data.pages.flatMap(page => page.results).length, 25)
+    assert.equal(observer.getCurrentResult().hasNextPage, false)
+    assert.deepEqual(calls.map(call => call.from), [0, 12, 12, 24])
+    for (const filters of [{ query: 'code' }, { category: 'Image Generation' }, { minDr: 60 }, { sort: 'dr' }, { sort: 'relevance' }]) {
+      observer.setOptions(options(filters))
+      await observer.refetch()
+      assert.equal(calls.at(-1).from, 0)
+      assert.equal(observer.getCurrentResult().data.pages.length, 1)
+    }
+  } finally {
+    unsubscribe()
+    client.clear()
+  }
 })
 
 test.after(() => { globalThis.fetch = originalFetch })

@@ -23,6 +23,7 @@ export interface FreeSerpToolsResponse {
   ok: true
   index: 'sites'
   total: number | null
+  from: number
   count: number
   results: FreeSerpSite[]
 }
