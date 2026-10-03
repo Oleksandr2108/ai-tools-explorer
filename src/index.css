@@ -41,7 +41,10 @@ body {
 
 #root { min-height: 100svh; }
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
 
 option {
   background: var(--color-surface);

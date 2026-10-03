@@ -1,12 +1,9 @@
-import { Check, Database, Sparkles } from 'lucide-react'
+import { ArrowDown, Check, Database, Sparkles } from 'lucide-react'
 import { HeroBackground } from './HeroBackground'
-import { SearchBar } from './SearchBar'
 
-type HeroProps = { query: string; onQueryChange: (value: string) => void }
-
-export function Hero({ query, onQueryChange }: HeroProps) {
+export function Hero() {
   return (
-    <section aria-labelledby="hero-heading" className="relative isolate px-4 pb-12 pt-16 text-center sm:px-6 sm:pb-16 sm:pt-20 lg:pt-24">
+    <section aria-labelledby="hero-heading" className="relative isolate px-4 pb-8 pt-12 text-center sm:px-6">
       <HeroBackground />
       <div className="mx-auto max-w-4xl">
         <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-3 py-1.5 text-[11px] font-medium tracking-wide text-accent-bright">
@@ -21,7 +18,12 @@ export function Hero({ query, onQueryChange }: HeroProps) {
           Less noise. More possibility. Find your next favorite AI tool<br className="hidden sm:block" />
           in one thoughtfully curated corner of the web.
         </p>
-        <SearchBar value={query} onChange={onQueryChange} />
+        <a
+          href="#catalog-controls"
+          className="mt-7 inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-accent/25 bg-accent/10 px-5 py-2.5 text-sm font-medium text-accent-bright transition-colors hover:border-accent/40 hover:bg-accent/15"
+        >
+          Explore AI tools <ArrowDown size={15} aria-hidden="true" />
+        </a>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-muted">
           <span className="inline-flex items-center gap-1.5"><Sparkles size={12} aria-hidden="true" />Interactive preview</span>
           <span className="inline-flex items-center gap-1.5"><Check size={12} aria-hidden="true" />No API key required</span>

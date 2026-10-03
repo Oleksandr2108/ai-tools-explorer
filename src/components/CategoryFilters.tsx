@@ -14,7 +14,7 @@ export function CategoryFilters({ value, onChange }: CategoryFiltersProps) {
           aria-pressed={category === value}
           onClick={() => onChange(category)}
           className={cn(
-            'inline-flex min-h-10 shrink-0 items-center gap-2 rounded-lg border px-3.5 text-xs font-medium transition-colors duration-200',
+            'inline-flex min-h-10 shrink-0 scroll-mt-36 items-center gap-2 rounded-lg border px-3.5 text-xs font-medium transition-colors duration-200 lg:scroll-mt-20',
             category === value
               ? 'border-accent/35 bg-accent/10 text-accent-bright'
               : 'border-border bg-surface/50 text-muted hover:border-border-strong hover:bg-surface-raised hover:text-primary',

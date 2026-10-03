@@ -13,11 +13,11 @@ export function StatsBar({ stats }: StatsBarProps) {
 
   return (
     <section aria-label="Sample discovery statistics" className="mx-auto max-w-3xl">
-      <dl className="grid grid-cols-3 divide-x divide-border rounded-2xl border border-border bg-surface/65 py-5 sm:py-6">
+      <dl className="grid grid-cols-3 divide-x divide-border rounded-2xl border border-border bg-surface/65 py-4">
         {metrics.map(({ value, label, icon: Icon }) => (
           <div key={label} className="px-2 text-center sm:px-6">
             <dt className="flex items-center justify-center gap-2 text-[10px] text-muted sm:text-xs"><Icon size={13} className="hidden sm:block" aria-hidden="true" />{label}</dt>
-            <dd className="mt-2 text-2xl font-medium tracking-tight tabular-nums sm:text-3xl">{formatNumber(value)}</dd>
+            <dd className="mt-1.5 text-2xl font-medium tracking-tight tabular-nums">{formatNumber(value)}</dd>
           </div>
         ))}
       </dl>
