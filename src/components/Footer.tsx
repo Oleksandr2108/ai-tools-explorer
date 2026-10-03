@@ -32,8 +32,8 @@ export function Footer() {
           </a>
         </div>
         <p className="mt-5 text-[10px] leading-5 text-subtle">
-          An AI discovery interface built with React + TypeScript. Preview
-          content is illustrative; live data is not connected yet.
+          AI discovery powered by FreeSerp homepage data. Discovery dates reflect
+          when FreeSerp first saw a site live, rather than official product launches.
         </p>
       </div>
     </footer>

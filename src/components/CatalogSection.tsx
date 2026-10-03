@@ -2,13 +2,15 @@ import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { CategoryFilters } from './CategoryFilters'
 import { FilterToolbar } from './FilterToolbar'
-import { LoadMore } from './LoadMore'
 import { SearchBar } from './SearchBar'
 import { ToolGrid } from './ToolGrid'
 import { Badge } from './ui/Badge'
-import { CATEGORIES, DR_OPTIONS, SORT_OPTIONS } from '../constants/filters'
-import { MOCK_TOOLS } from '../mocks/tools'
-import { filterTools } from '../utils/filterTools'
+import { API_CATEGORIES, CATEGORIES, DR_OPTIONS, SORT_OPTIONS } from '../constants/filters'
+import { useTools } from '../hooks/useTools'
+import { useDebounce } from '../hooks/useDebounce'
+import { mapFreeSerpSiteToTool } from '../utils/mapFreeSerpSiteToTool'
+import { ToolCardSkeleton } from './ToolCardSkeleton'
+import { ErrorState } from './ErrorState'
 import { formatNumber } from '../utils/format'
 
 export function CatalogSection() {
@@ -24,7 +26,26 @@ export function CatalogSection() {
   const category = CATEGORIES.find((value) => value === params.get('category')) ?? 'All'
   const sort = SORT_OPTIONS.find(({ value }) => value === params.get('sort'))?.value ?? 'newest'
   const minRating = DR_OPTIONS.find(({ value }) => value === params.get('dr'))?.value ?? '0'
-  const tools = filterTools(MOCK_TOOLS, { query, category, sort, minRating })
+  const debouncedQuery = useDebounce(query)
+  const result = useTools({
+    query: debouncedQuery,
+    category: API_CATEGORIES[category],
+    minDr: Number(minRating),
+    // Relevance requires search text; browse newest sites when it is empty.
+    sort: sort === 'rating' ? 'dr' : sort === 'relevance' && debouncedQuery.trim() ? 'relevance' : 'went_live',
+  })
+  const tools = result.data?.results.map(mapFreeSerpSiteToTool) ?? []
+  const total = result.data?.total ?? result.data?.count ?? tools.length
+  const updating = result.isFetching || query !== debouncedQuery
+
+  let content
+  if (result.isPending) {
+    content = <div role="status" aria-label="Loading AI tools" className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3 lg:gap-5">{Array.from({ length: 6 }, (_, index) => <ToolCardSkeleton key={index} />)}</div>
+  } else if (result.isError) {
+    content = <ErrorState onRetry={() => { void result.refetch() }} retrying={result.isFetching} />
+  } else {
+    content = <ToolGrid tools={tools} onReset={resetFilters} />
+  }
 
   function updateFilter(key: string, value: string, defaultValue = '') {
     setParams((current) => {
@@ -67,7 +88,7 @@ export function CatalogSection() {
           <p className="mt-2 text-sm text-muted">The right tool can change how you work. Find yours.</p>
         </div>
         <Badge className="gap-1.5 rounded-full px-2.5 py-1.5 text-[10px]">
-          <span aria-hidden="true" className="size-1 rounded-full bg-accent" />Sample collection
+          <span aria-hidden="true" className="size-1 rounded-full bg-accent" />FreeSerp discovery
         </Badge>
       </div>
       {/* A viewport-height minimum keeps the search stable as results shrink. */}
@@ -94,18 +115,9 @@ export function CatalogSection() {
           <CategoryFilters value={category} onChange={(value) => updateFilter('category', value, 'All')} />
         </div>
         <p role="status" aria-live="polite" className="mb-5 mt-2 text-sm text-muted">
-          <span className="font-medium text-primary">{formatNumber(tools.length)}</span>{' '}
-          {tools.length === 1 ? 'AI tool' : 'AI tools'}
-          <span className="ml-1 text-xs text-subtle">in this preview</span>
+          {result.isPending ? 'Loading AI tools…' : result.isError ? 'Results unavailable' : <><span className="font-medium text-primary">{formatNumber(total)}</span> {total === 1 ? 'AI tool' : 'AI tools'}<span className="ml-1 text-xs text-subtle">{updating ? 'Updating…' : `Showing ${formatNumber(tools.length)}`}</span></>}
         </p>
-        <ToolGrid tools={tools} onReset={resetFilters} />
-        {tools.length > 0 && (
-          <div className="mt-10 flex flex-col items-center gap-3">
-            {/* Pagination becomes available when FreeSerp is connected. */}
-            <LoadMore disabled />
-            <p className="text-center text-[11px] text-subtle">You’re viewing sample tools. More discoveries with live data.</p>
-          </div>
-        )}
+        <div aria-busy={updating}>{content}</div>
       </div>
     </section>
   )

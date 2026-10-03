@@ -13,5 +13,5 @@
 - Add loading/error/empty states with data features. Do not swallow errors, use alert(), or leave debug logs.
 - Use clear English naming and readable imports. Avoid duplicated logic, speculative abstractions, unnecessary aliases, and over-engineering.
 - Run npm run build and npm run lint after substantial changes; fix all failures.
-- Current phase is a visual shell with typed UI-development fixtures in src/mocks. Clearly label sample content; never represent mock ratings, dates, or statistics as live data. Do not connect FreeSerp until requested. Preserve the existing router and QueryClient.
+- FreeSerp is now connected through typed API functions and Query hooks. Preserve the existing router, QueryClient, and visual design. Never invent missing API values or describe discovery dates as official launches. Pagination and expanded URL synchronization belong to the next phase.
 

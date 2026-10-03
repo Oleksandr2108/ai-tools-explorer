@@ -3,7 +3,6 @@ import { Hero } from '../components/Hero'
 import { StatsBar } from '../components/StatsBar'
 import { CatalogSection } from '../components/CatalogSection'
 import { Footer } from '../components/Footer'
-import { MOCK_STATS } from '../mocks/tools'
 
 export function ExplorePage() {
   return (
@@ -13,7 +12,7 @@ export function ExplorePage() {
       <main>
         <Hero />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <StatsBar stats={MOCK_STATS} />
+          <StatsBar />
           <CatalogSection />
         </div>
       </main>

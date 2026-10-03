@@ -1,18 +1,12 @@
-// UI model for the preview. Keep the eventual FreeSerp wire response separate.
+// Presentation model, separate from the FreeSerp wire response.
 export type Tool = {
   id: string
   title: string
   domain: string
-  url: string
+  url: string | null
   description: string
   categories: string[]
-  domainRating: number
-  discoveredAt: string
+  domainRating: number | null
+  discoveredAt: string | null
   avatar: string
-}
-
-export type ToolStats = {
-  total: number
-  today: number
-  categories: number
 }

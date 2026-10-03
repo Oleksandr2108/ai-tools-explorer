@@ -25,9 +25,9 @@ export function Hero() {
           Explore AI tools <ArrowDown size={15} aria-hidden="true" />
         </a>
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-muted">
-          <span className="inline-flex items-center gap-1.5"><Sparkles size={12} aria-hidden="true" />Interactive preview</span>
+          <span className="inline-flex items-center gap-1.5"><Sparkles size={12} aria-hidden="true" />AI startup discovery</span>
           <span className="inline-flex items-center gap-1.5"><Check size={12} aria-hidden="true" />No API key required</span>
-          <span className="inline-flex items-center gap-1.5"><Database size={12} aria-hidden="true" />Live FreeSerp data coming next</span>
+          <span className="inline-flex items-center gap-1.5"><Database size={12} aria-hidden="true" />Powered by FreeSerp data</span>
         </div>
       </div>
     </section>

@@ -19,3 +19,11 @@ export const DR_OPTIONS = [
 export type Category = typeof CATEGORIES[number]
 export type SortOption = typeof SORT_OPTIONS[number]['value']
 export type DomainRatingFilter = typeof DR_OPTIONS[number]['value']
+
+// Short UI labels map to FreeSerp's exact-match taxonomy.
+export const API_CATEGORIES: Record<Category, string | undefined> = {
+  All: undefined, 'AI Agents': 'AI Agents & Autonomous',
+  'Code & Dev Tools': 'Code & Dev Tools', 'Image Generation': 'Image Generation',
+  'Video Generation': 'Video Generation', Automation: 'AI Automation & Workflows',
+  'AI Search': 'AI Search & Answers', Design: 'Design & UI', Chatbots: 'AI Chatbot & Assistant',
+}
