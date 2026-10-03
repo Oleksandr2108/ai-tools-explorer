@@ -2,12 +2,12 @@ import type { Tool } from '../types/tool'
 import { ToolCard } from './ToolCard'
 import { EmptyState } from './EmptyState'
 
-type ToolGridProps = { tools: Tool[]; onReset: () => void; onOpenDetails: (domain: string) => void }
+type ToolGridProps = { tools: Tool[]; canReset: boolean; onReset: () => void; onOpenDetails: (domain: string) => void }
 
-export function ToolGrid({ tools, onReset, onOpenDetails }: ToolGridProps) {
+export function ToolGrid({ tools, canReset, onReset, onOpenDetails }: ToolGridProps) {
   if (!tools.length) {
     return (
-      <EmptyState onReset={onReset} />
+      <EmptyState onReset={canReset ? onReset : undefined} />
     )
   }
 

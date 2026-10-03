@@ -14,6 +14,11 @@ async function moduleUrl(path, replacements = []) {
 }
 const domainUrl = await moduleUrl('utils/normalizeDomain.ts')
 const { normalizeDomain } = await import(domainUrl)
+const filtersUrl = await moduleUrl('constants/filters.ts')
+const { API_CATEGORIES, API_SORTS } = await import(filtersUrl)
+const { readCatalogFilters, writeCatalogFilters } = await import(await moduleUrl('utils/catalogFilters.ts', [
+  ["'../constants/filters'", JSON.stringify(filtersUrl)],
+]))
 const apiUrl = await moduleUrl('api/freeserp.ts', [
   ['import.meta.env', '({ DEV: false })'],
   ["'../utils/normalizeDomain'", JSON.stringify(domainUrl)],
@@ -185,6 +190,27 @@ test('domain lookup normalizes encoded domains and rejects unrelated results and
   assert.equal(await api.getAiToolByDomain('https://bad.ai'), null)
   respond({}, 502)
   await assert.rejects(api.getAiToolByDomain('wiley.com'), /Unable to load AI tools/)
+})
+
+test('catalog URL round trips, trims search, omits defaults and validates filters', () => {
+  const defaults = { query: '', category: 'All', sort: 'newest', minRating: '0' }
+  assert.deepEqual(readCatalogFilters(new URLSearchParams('dr=999&sort=random&category=invalid&q=%20%20')), defaults)
+  assert.equal(writeCatalogFilters(defaults).toString(), '')
+  const active = { query: 'code & AI', category: 'Code & Dev Tools', sort: 'rating', minRating: '40' }
+  const serialized = writeCatalogFilters({ ...active, query: '  code & AI  ' })
+  assert.deepEqual(readCatalogFilters(serialized), active)
+  assert.equal(serialized.get('q'), 'code & AI')
+  assert.equal(writeCatalogFilters(defaults, serialized).toString(), '')
+  assert.equal(writeCatalogFilters(defaults, new URLSearchParams('campaign=abc&sort=random')).get('campaign'), 'abc')
+  assert.equal(API_CATEGORIES.Automation, 'AI Automation & Workflows')
+  assert.equal(API_CATEGORIES.Chatbots, 'AI Chatbot & Assistant')
+  assert.deepEqual(API_SORTS, { newest: 'went_live', rating: 'dr', relevance: 'relevance' })
+  const base = toolsQueryOptions({}).queryKey
+  for (const change of [{ query: 'code' }, { category: 'Code & Dev Tools' }, { minDr: 40 }, { sort: 'dr' }, { order: 'asc' }]) {
+    assert.notDeepEqual(toolsQueryOptions(change).queryKey, base)
+  }
+  assert.equal(base[1].size, 12)
+  assert.equal(base[1].order, 'desc')
 })
 
 test.after(() => { globalThis.fetch = originalFetch })

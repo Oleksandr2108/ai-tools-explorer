@@ -30,8 +30,7 @@ Sort and Domain Rating share a custom dropdown with keyboard navigation,
 outside-click dismissal, Escape handling, and visible selection/focus states.
 The hero CTA jumps to catalog controls. The / keyboard shortcut focuses the sole
 search field; Enter brings its controls and nearby results into view. Typing
-updates the API after a 400 ms debounce without scrolling. The query is saved to the URL
-on submit or filter actions (clearing search removes it immediately). A minimum
+commits trimmed search to the URL after a 400 ms debounce without scrolling. API requests derive only from URL state, avoiding duplicate search requests. Category, sort, and DR selections push history entries; debounced typing replaces the current entry. Refresh and Back/Forward restore controls, and Clear filters returns to / without reloading. A minimum
 workspace height keeps shorter result sets from pulling the controls downward.
 Smooth scrolling respects reduced-motion preferences.
 Initial loading shows six skeleton cards. useInfiniteQuery owns catalog pages with
@@ -78,9 +77,9 @@ after catalog navigation, restoring serialized search/filter context, cached pag
 and saved scroll position where possible; direct visits fall back to `/`.
 Production hosting must serve index.html for `/tool/*` as well as `/`.
 
-## Next phase
+## API limitations
 
-Add expanded URL synchronization. FreeSerp sites pagination is limited
+FreeSerp sites pagination is limited
 to from + size <= 10,000. Unknown filters are ignored and invalid sorts fall back
 silently, so inspect echoed filters when extending the UI. Newest sites often omit DR,
 and AI niche discovery can also return agencies or research sites.
