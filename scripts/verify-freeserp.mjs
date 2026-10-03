@@ -12,11 +12,17 @@ async function moduleUrl(path, replacements = []) {
   const { outputText } = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2023 } })
   return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`
 }
-const apiUrl = await moduleUrl('api/freeserp.ts', [['import.meta.env', '({ DEV: false })']])
+const domainUrl = await moduleUrl('utils/normalizeDomain.ts')
+const { normalizeDomain } = await import(domainUrl)
+const apiUrl = await moduleUrl('api/freeserp.ts', [
+  ['import.meta.env', '({ DEV: false })'],
+  ["'../utils/normalizeDomain'", JSON.stringify(domainUrl)],
+])
 const api = await import(apiUrl)
 const offsetUrl = await moduleUrl('utils/getNextToolsOffset.ts', [["'../api/freeserp'", JSON.stringify(apiUrl)]])
 const { getNextToolsOffset } = await import(offsetUrl)
 const { toolsQueryOptions } = await import(await moduleUrl('hooks/useTools.ts', [
+  ["'react'", JSON.stringify(import.meta.resolve('react'))],
   ["'../api/freeserp'", JSON.stringify(apiUrl)],
   ["'../utils/getNextToolsOffset'", JSON.stringify(offsetUrl)],
   ["'@tanstack/react-query'", JSON.stringify(import.meta.resolve('@tanstack/react-query'))],
@@ -156,6 +162,29 @@ test('infinite query appends pages, retains them on next-page failure, retries a
     unsubscribe()
     client.clear()
   }
+})
+
+test('domain lookup normalizes encoded domains and rejects unrelated results and invalid inputs', async () => {
+  assert.equal(normalizeDomain('%77ILEY.com'), 'wiley.com')
+  assert.equal(normalizeDomain('EXAMPLE.AI.'), 'example.ai')
+  assert.equal(normalizeDomain('bücher.de'), 'xn--bcher-kva.de')
+  for (const domain of ['', 'localhost', 'https://example.ai', 'example.ai/path', 'user@example.ai', 'example.ai:443', '%ZZ', '-bad.ai', '127.0.0.1']) assert.equal(normalizeDomain(domain), null)
+  respond(success([{ domain: 'wiley.com', title: 'Wiley', ai_source: 'nextjs' }]))
+  const site = await api.getAiToolByDomain('%77ILEY.com')
+  assert.equal(site.domain, 'wiley.com')
+  assert.equal(site.ai_source, 'nextjs')
+  assert.equal(requested.searchParams.get('q'), 'wiley.com')
+  assert.equal(requested.searchParams.get('size'), '1')
+  assert.equal(requested.searchParams.get('index'), 'sites')
+  assert.equal(requested.searchParams.get('ai_startups'), '1')
+  respond(success([{ domain: 'other.ai' }]))
+  assert.equal(await api.getAiToolByDomain('missing.ai'), null)
+  respond(success())
+  assert.equal(await api.getAiToolByDomain('missing.ai'), null)
+  globalThis.fetch = async () => { throw new Error('invalid domain must not request') }
+  assert.equal(await api.getAiToolByDomain('https://bad.ai'), null)
+  respond({}, 502)
+  await assert.rejects(api.getAiToolByDomain('wiley.com'), /Unable to load AI tools/)
 })
 
 test.after(() => { globalThis.fetch = originalFetch })

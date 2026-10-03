@@ -1,4 +1,5 @@
 import type { FreeSerpSite, FreeSerpStats, FreeSerpToolsResponse, GetAiToolsParams } from '../types/freeserp'
+import { normalizeDomain } from '../utils/normalizeDomain'
 
 const FREESERP_BASE_URL = 'https://freeserp.ai/api.php'
 // FreeSerp currently emits duplicate CORS headers. Vite's scoped proxy is
@@ -26,6 +27,7 @@ function parseSite(value: unknown): FreeSerpSite | null {
       ? [...new Set(value.ai_categories.map(text).filter((item): item is string => item !== null))] : [],
     dr: dr !== null && dr <= 100 ? dr : null,
     went_live: text(value.went_live), first_seen: text(value.first_seen),
+    ai_source: text(value.ai_source),
   }
 }
 export function normalizeToolParams(params: GetAiToolsParams): GetAiToolsParams {
@@ -74,5 +76,14 @@ export async function getStats(signal?: AbortSignal): Promise<FreeSerpStats> {
   const body = await request(new URLSearchParams({ index: 'sites', stats: '1' }), 'Unable to load statistics.', signal)
   if (!isRecord(body.ai_startups)) throw new Error('Unable to load statistics.')
   return { total: number(body.ai_startups.total), today: number(body.ai_startups.today), generatedAt: text(body.generated_at) }
+}
+
+export async function getAiToolByDomain(value: string, signal?: AbortSignal): Promise<FreeSerpSite | null> {
+  const domain = normalizeDomain(value)
+  if (!domain) return null
+  const response = await getAiTools({ query: domain, size: 1, sort: 'relevance' }, signal)
+  // Domain searches boost exact matches, but are still searches. Never display
+  // an unrelated top hit for an unknown or no-longer-indexed domain.
+  return response.results.find((site) => normalizeDomain(site.domain) === domain) ?? null
 }
 

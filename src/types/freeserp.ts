@@ -18,6 +18,7 @@ export interface FreeSerpSite {
   dr: number | null
   went_live: string | null
   first_seen: string | null
+  ai_source: string | null
 }
 export interface FreeSerpToolsResponse {
   ok: true

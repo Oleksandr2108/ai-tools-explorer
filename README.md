@@ -39,7 +39,8 @@ one 12-result page-size constant. Load More requests the next offset from respon
 from/count/total metadata and appends cards. Loaded cards stay visible during next-page
 loading and errors; failures show a compact retry message beside the button.
 The button hides at the end of results or the API's paging window. Search, category,
-DR, and sort changes start at offset zero, with inactive filter pages discarded.
+DR, and sort changes start at offset zero, with previous filter pages discarded.
+Loaded pages are cached for five minutes when navigating to tool details.
 Initial failures show the full retry state; successful empty responses show
 an empty state. Stats use ai_startups.total and ai_startups.today; unavailable
 metrics and failed statistics are omitted. No category total is inferred from the
@@ -59,6 +60,23 @@ Production builds default to `https://freeserp.ai/api.php`. Static deployment re
 FreeSerp to fix its CORS headers, or a same-origin proxy configured through the optional
 `VITE_FREESERP_BASE_URL` build variable. No key or .env file is required. Vite's development
 proxy is not bundled into production. Deployment also needs an SPA fallback to index.html.
+
+## Tool details
+
+`/tool/:domain` is a directly shareable route. Cards provide separate View details
+and external website actions. `useToolDetails` requests its own data through
+`getAiToolByDomain`: index=sites, ai_startups=1, q=domain, size=1, sort=relevance.
+The returned domain must match the normalized route domain; unrelated hits mean
+not found. Invalid route domains do not trigger a request. FreeSerp is a discovery
+index, so some established or no-longer-indexed domains will be unavailable.
+
+The page shows a full summary, real categories, available DR/discovery metadata,
+and detected platform information when recognized. Missing values are omitted;
+loading, network errors with retry, and not-found responses have distinct states.
+The shared generated avatar has no external image dependency. Back uses history
+after catalog navigation, restoring serialized search/filter context, cached pages,
+and saved scroll position where possible; direct visits fall back to `/`.
+Production hosting must serve index.html for `/tool/*` as well as `/`.
 
 ## Next phase
 

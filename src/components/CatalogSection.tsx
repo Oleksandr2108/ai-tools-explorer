@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { CategoryFilters } from './CategoryFilters'
 import { FilterToolbar } from './FilterToolbar'
 import { SearchBar } from './SearchBar'
@@ -15,6 +15,8 @@ import { LoadMore } from './LoadMore'
 import { formatNumber } from '../utils/format'
 
 export function CatalogSection() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const urlQuery = params.get('q') ?? ''
   // Keep fast typing synchronous. Serialize the draft on submit/filter actions;
@@ -38,6 +40,13 @@ export function CatalogSection() {
   const total = result.data?.pages[0]?.total ?? tools.length
   const updating = result.isFetching || query !== debouncedQuery
   const firstPageFailed = result.isError && !result.data
+  const navigationState: unknown = location.state
+  const restoreScroll = navigationState && typeof navigationState === 'object' && 'catalogScroll' in navigationState
+    && typeof navigationState.catalogScroll === 'number' && Number.isFinite(navigationState.catalogScroll)
+    ? Math.max(0, navigationState.catalogScroll) : null
+  useEffect(() => {
+    if (!result.isPending && restoreScroll !== null) window.scrollTo({ top: restoreScroll, behavior: 'instant' })
+  }, [location.key, result.isPending, restoreScroll])
 
   let content
   if (result.isPending) {
@@ -45,7 +54,7 @@ export function CatalogSection() {
   } else if (firstPageFailed) {
     content = <ErrorState onRetry={() => { void result.refetch() }} retrying={result.isFetching} />
   } else {
-    content = <ToolGrid tools={tools} onReset={resetFilters} />
+    content = <ToolGrid tools={tools} onReset={resetFilters} onOpenDetails={openDetails} />
   }
 
   function updateFilter(key: string, value: string, defaultValue = '') {
@@ -79,6 +88,17 @@ export function CatalogSection() {
   function changeQuery(value: string) {
     setSearch({ source: urlQuery, value })
     if (!value) updateFilter('q', '')
+  }
+
+  function openDetails(domain: string) {
+    const next = new URLSearchParams(params)
+    if (query) next.set('q', query)
+    else next.delete('q')
+    // Save the draft and scroll on the history entry that Back will restore.
+    navigate({ pathname: '/', search: next.toString(), hash: location.hash }, {
+      replace: true, state: { catalogScroll: window.scrollY },
+    })
+    navigate(`/tool/${encodeURIComponent(domain)}`, { state: { fromCatalog: true } })
   }
 
   return (

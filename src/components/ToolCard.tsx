@@ -1,16 +1,20 @@
-import { ArrowUpRight, CalendarDays, ChartNoAxesColumnIncreasing } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, CalendarDays, ChartNoAxesColumnIncreasing } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import type { Tool } from '../types/tool'
 import { formatDate } from '../utils/formatDate'
 import { Badge } from './ui/Badge'
+import { ToolAvatar } from './ToolAvatar'
+import { normalizeDomain } from '../utils/normalizeDomain'
 
-type ToolCardProps = { tool: Tool }
+type ToolCardProps = { tool: Tool; onOpenDetails: (domain: string) => void }
 
-export function ToolCard({ tool }: ToolCardProps) {
+export function ToolCard({ tool, onOpenDetails }: ToolCardProps) {
   const discoveredDate = formatDate(tool.discoveredAt)
+  const domain = normalizeDomain(tool.domain)
   return (
     <article className="group flex h-full min-w-0 flex-col rounded-2xl border border-border bg-surface/80 p-5 transition-[transform,border-color,background-color,box-shadow] duration-200 motion-safe:hover:-translate-y-0.5 hover:border-border-strong hover:bg-surface-hover hover:shadow-[0_10px_35px_-15px_#0009] focus-within:border-accent/40 sm:p-6">
       <div className="flex min-w-0 items-center gap-3.5">
-        <span aria-hidden="true" className="flex size-11 shrink-0 items-center justify-center rounded-xl border border-border-strong bg-gradient-to-br from-surface-hover to-background text-lg font-medium tracking-tight text-primary">{tool.avatar}</span>
+        <ToolAvatar letters={tool.avatar} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-[15px] font-semibold tracking-tight" title={tool.title}>{tool.title}</h3>
           <p className="mt-1 truncate text-xs text-subtle" title={tool.domain}>{tool.domain}</p>
@@ -27,9 +31,14 @@ export function ToolCard({ tool }: ToolCardProps) {
         {discoveredDate && <span className="inline-flex items-center gap-1.5"><CalendarDays size={11} aria-hidden="true" />Discovered <time dateTime={tool.discoveredAt ?? undefined}>{discoveredDate}</time></span>}
       </div>
       <div className="mt-auto pt-5">
-        {tool.url ? <a href={tool.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${tool.title} website (opens in a new tab)`} className="flex min-h-10 cursor-pointer items-center justify-between gap-2 border-t border-border pt-4 text-xs font-medium text-muted transition-colors hover:text-accent-bright">
-          Visit website <ArrowUpRight size={15} className="transition-transform duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
-        </a> : <span className="block min-h-10 border-t border-border pt-4 text-xs text-subtle">Website unavailable</span>}
+        <div className="flex min-h-10 items-center justify-between gap-3 border-t border-border pt-3 text-xs font-medium">
+          {domain && <Link to={`/tool/${encodeURIComponent(domain)}`} aria-label={`View details for ${tool.title}`} onClick={(event) => {
+            if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+            event.preventDefault()
+            onOpenDetails(domain)
+          }} className="inline-flex min-h-8 items-center gap-2 text-accent-bright transition-colors hover:text-primary">View details <ArrowRight size={14} aria-hidden="true" /></Link>}
+          {tool.url ? <a href={tool.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${tool.title} website (opens in a new tab)`} className="ml-auto inline-flex min-h-8 items-center gap-1.5 text-muted transition-colors hover:text-accent-bright">Visit website <ArrowUpRight size={14} aria-hidden="true" /></a> : <span className="ml-auto text-subtle">Website unavailable</span>}
+        </div>
       </div>
     </article>
   )
