@@ -1,75 +1,33 @@
-# React + TypeScript + Vite
+# AI Tools Explorer
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Vite + React + strict TypeScript visual preview for discovering AI websites.
 
-Currently, two official plugins are available:
+Run npm install, then npm run dev. Validate with npm run build and npm run lint.
+Use npm run preview to preview the production build.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Architecture
 
-## React Compiler
+- src/main.tsx: StrictMode, one QueryClient, QueryClientProvider, BrowserRouter.
+- src/App.tsx: routing; / renders src/pages/ExplorePage.tsx.
+- src/api/freeserp.ts: endpoint/index configuration and future API boundary.
+- src/utils/cn.ts: typed clsx + tailwind-merge helper.
+- src/index.css: Tailwind v4 and shared dark theme tokens.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- src/components: independent hero, navigation, search, statistics, catalog controls, cards, and footer.
+- src/mocks/tools.ts: isolated, typed UI fixtures. Statistics, ratings, and discovery dates are illustrative.
+- src/types/tool.ts: UI models, separate from future API response types.
+- src/constants/filters.ts: shared category, sort, and Domain Rating configuration.
 
-## Expanding the ESLint configuration
+Search, categories, sorting, and Domain Rating filter the sample collection locally.
+Shareable preview state lives in URL parameters (q, category, sort, dr).
+The / keyboard shortcut focuses search; Enter scrolls to results.
+Load more is disabled until live pagination is available.
+Follow [AGENTS.md](./AGENTS.md) for development rules.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Next phase
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
-
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
-```
+Replace fixtures with typed/validated API requests and Query hooks. Move filtering
+and sorting server-side and add loading, error, empty, and pagination states.
+Consult [FreeSerp documentation](https://freeserp.ai/docs.php) for index=sites.
+No API requests run in this phase. Verify category mappings, response nullability, stats availability, and pagination
+limits before defining response types. Deployment needs an SPA fallback to index.html.
