@@ -26,7 +26,7 @@ export function ToolCard({ tool }: ToolCardProps) {
         <span className="inline-flex items-center gap-1.5"><CalendarDays size={11} aria-hidden="true" />Discovered <time dateTime={tool.discoveredAt}>{formatDiscoveredDate(tool.discoveredAt)}</time></span>
       </div>
       <div className="mt-auto pt-5">
-        <a href={tool.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${tool.title} website (opens in a new tab)`} className="flex min-h-10 scroll-mt-36 items-center justify-between gap-2 border-t border-border pt-4 text-xs font-medium text-muted transition-colors hover:text-accent-bright lg:scroll-mt-20">
+        <a href={tool.url} target="_blank" rel="noopener noreferrer" aria-label={`Visit ${tool.title} website (opens in a new tab)`} className="flex min-h-10 cursor-pointer items-center justify-between gap-2 border-t border-border pt-4 text-xs font-medium text-muted transition-colors hover:text-accent-bright">
           Visit website <ArrowUpRight size={15} className="transition-transform duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5" aria-hidden="true" />
         </a>
       </div>

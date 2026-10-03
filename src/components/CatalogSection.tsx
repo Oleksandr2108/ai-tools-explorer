@@ -70,14 +70,13 @@ export function CatalogSection() {
           <span aria-hidden="true" className="size-1 rounded-full bg-accent" />Sample collection
         </Badge>
       </div>
-      {/* Anchor a normal-flow workspace, not the sticky toolbar's moving position.
-          A viewport-height minimum keeps the search stable as results shrink. */}
+      {/* A viewport-height minimum keeps the search stable as results shrink. */}
       <div id="catalog-controls" className="min-h-[calc(100svh-5.5rem)]">
         <div
           id="catalog-toolbar"
           role="region"
           aria-label="Catalog search and filters"
-          className="sticky top-20 z-20 rounded-2xl border border-border bg-background/90 p-3 shadow-[0_8px_24px_-16px_#000b] backdrop-blur-xl"
+          className="relative z-10 rounded-2xl border border-border bg-surface/60 p-3 shadow-[0_8px_24px_-16px_#000b]"
         >
           <div className="flex flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-3">
             <div className="min-w-0 flex-1">

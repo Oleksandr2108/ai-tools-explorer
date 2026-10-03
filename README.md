@@ -20,8 +20,9 @@ Use npm run preview to preview the production build.
 
 Search, categories, sorting, and Domain Rating filter the sample collection locally.
 Shareable preview state lives in URL parameters (q, category, sort, dr).
-The catalog groups search, filters, and results. Search, sort, and Domain Rating
-stay sticky below the header; category chips scroll outside the sticky panel.
+The catalog groups search, filters, and results in normal document flow.
+Sort and Domain Rating share a custom dropdown with keyboard navigation,
+outside-click dismissal, Escape handling, and visible selection/focus states.
 The hero CTA jumps to catalog controls. The / keyboard shortcut focuses the sole
 search field; Enter brings its controls and nearby results into view. Typing
 filters the preview immediately without scrolling. The query is saved to the URL

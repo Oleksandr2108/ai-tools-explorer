@@ -7,9 +7,9 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 const variants = {
-  primary: 'border-accent/40 bg-accent text-background hover:bg-accent-bright',
-  secondary: 'border-border bg-surface-raised text-primary hover:border-border-strong hover:bg-surface-hover',
-  ghost: 'border-transparent bg-transparent text-muted hover:bg-surface-raised hover:text-primary',
+  primary: 'border-accent/40 bg-accent text-background enabled:hover:bg-accent-bright',
+  secondary: 'border-border bg-surface-raised text-primary enabled:hover:border-border-strong enabled:hover:bg-surface-hover',
+  ghost: 'border-transparent bg-transparent text-muted enabled:hover:bg-surface-raised enabled:hover:text-primary',
 }
 
 export function Button({
@@ -22,7 +22,7 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={cn('inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50', variants[variant], className)}
+      className={cn('inline-flex min-h-11 cursor-pointer items-center justify-center gap-2 rounded-xl border px-5 py-2.5 text-sm font-medium transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50', variants[variant], className)}
     >
       {children}
     </button>
