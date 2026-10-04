@@ -1,86 +1,149 @@
 # AI Tools Explorer
 
-Vite + React + strict TypeScript frontend for discovering AI websites through FreeSerp.
+A responsive catalog for discovering and evaluating AI websites and products using live FreeSerp data. Search, narrow the results, read a full tool profile, then visit its official website.
 
-Run npm install, then npm run dev. Validate with npm run build, npm run lint,
-and npm run test:data (request encoding, response validation, errors, fallbacks, and pagination).
-Use npm run preview to preview the production build.
+## Live Demo
+
+Prepared for the assignment's Semalt workspace. No public deployment URL is configured in this repository. The production bundle is portable; see **Build** for hosting requirements.
+
+## About the Project
+
+Built for a Junior AI Web Developer test assignment, with a restrained dark interface, reusable components, and deliberately limited scope. All catalog content and statistics come from the API; missing information is omitted or clearly labeled.
+
+## Site Plan
+
+### Purpose
+
+Help people discover AI products and evaluate them before leaving for an external website.
+
+### Target Audience
+
+Developers, designers, startup founders, product managers, marketers, and people looking for AI tools.
+
+### Pages
+
+1. **Explore (`/`)**: discovery catalog, search, category and Domain Rating filters, sorting, and Load More.
+2. **Tool Details (`/tool/:domain`)**: full description, categories, domain information, available DR and discovery date, and an official website link.
+
+### Structure
+
+```text
+Explore:      Header → Hero → Stats → Catalog → Footer
+                                   Search / Categories / Filters / Results / Load More
+Tool Details: Header → Back → Tool hero + External CTA → About + Details → Footer
+```
+
+## Preview
+
+![Explore catalog](docs/screenshots/explore.jpg)
+![Tool details](docs/screenshots/tool-details.jpg)
+
+## Features
+
+- Live AI niche discovery and real API totals.
+- Responsive search with a 400 ms debounce; trimmed queries flow through URL state before requesting data.
+- Exact API category mappings, DR thresholds of 20/40/60, and Newest/Highest DR/Most Relevant sorting.
+- Shareable `q`, `category`, `sort`, and `dr` parameters; defaults are omitted and invalid values fall back safely.
+- Refresh and Back/Forward restore filters. Clear filters returns to `/` without reloading.
+- Twelve tools per page, appended with Load More. Changing filters starts at offset zero.
+- Shareable detail pages with independent domain lookup, full summaries, and safe external links.
+- Skeletons, empty results, initial-error retry, and next-page errors that preserve existing cards.
+- Shared letter avatars, keyboard dropdowns, visible focus, labeled search, skip links, and CSS background animation with reduced-motion support.
+
+## Tech Stack
+
+React 19, TypeScript, Vite, Tailwind CSS 4, React Router, TanStack Query, Lucide React, clsx, tailwind-merge, and ESLint. No backend or authentication service is included.
+
+## FreeSerp API
+
+Requests are centralized in `src/api/freeserp.ts` and use the public, keyless [FreeSerp API](https://freeserp.ai/docs.php):
+
+```text
+https://freeserp.ai/api.php
+index=sites&ai_startups=1&size=12&from=0&sort=went_live&order=desc
+```
+
+`index=sites` supplies homepage/site profiles. `ai_startups=1` is the API's recommended AI discovery filter. Search sends `q`; categories send the exact `ai_categories` taxonomy value; DR sends `dr_min`. Newest sorts by `went_live`, Highest DR by `dr`, and Most Relevant by `relevance` when searching (otherwise newest discovery order).
+
+The UI uses title, domain, URL, `ai_summary`, `ai_categories`, `dr`, `went_live`, and `first_seen`. Recognized `ai_source` platform information appears selectively on details. Live responses were checked because documentation and returned category labels can differ; Chatbots maps to `AI Chatbot & Assistant`.
+
+**Date semantics:** `went_live` records when FreeSerp first confirmed a site live; `first_seen` is the fallback discovery date. Neither guarantees an official product launch. The UI therefore says **Discovered** or **First seen live**.
+
+Domain lookup uses `q=normalized-domain&size=1&sort=relevance`, then verifies that the returned domain matches exactly. Invalid domains make no request; absent or unrelated results produce a not-found state.
 
 ## Architecture
 
-- src/main.tsx: StrictMode, one QueryClient, QueryClientProvider, BrowserRouter.
-- src/App.tsx: routing; / renders src/pages/ExplorePage.tsx.
-- src/api/freeserp.ts: typed requests, defaults, URL parameters, response validation, and errors.
-- src/hooks/useTools.ts / useStats.ts: TanStack Query server state, cancellation, caching, and one retry.
-- src/hooks/useDebounce.ts: 400 ms search debounce.
-- src/utils/cn.ts: typed clsx + tailwind-merge helper.
-- src/index.css: Tailwind v4 and shared dark theme tokens.
+```text
+UI components → custom hooks → TanStack Query → typed FreeSerp client
+                    ↑
+             React Router URL filters
+```
 
-- src/components: independent hero, navigation, search, statistics, catalog controls, cards, and footer.
-- src/types/freeserp.ts: nullable API models and typed request parameters.
-- src/types/tool.ts: presentation model; src/utils/mapFreeSerpSiteToTool.ts supplies safe fallbacks and URLs.
-- src/constants/filters.ts: shared category, sort, and Domain Rating configuration.
+TanStack Query owns server data, cancellation, caching, and retry. `useInfiniteQuery` owns catalog pages; `from/count/total` determines the next offset. Query keys include all request-affecting values. Previous filter pagination is discarded when filters change; cached pages remain available for five minutes during detail navigation.
 
-All catalog requests use index=sites and ai_startups=1. The default request retrieves
-12 results from offset 0, sorted by went_live descending. Search, exact category
-taxonomy, DR minimum, and sort run on the API. Relevance without search text uses
-newest discovery order. Existing URL parameters (q, category, sort, dr) are retained.
-The catalog groups search, filters, and results in normal document flow.
-Sort and Domain Rating share a custom dropdown with keyboard navigation,
-outside-click dismissal, Escape handling, and visible selection/focus states.
-The hero CTA jumps to catalog controls. The / keyboard shortcut focuses the sole
-search field; Enter brings its controls and nearby results into view. Typing
-commits trimmed search to the URL after a 400 ms debounce without scrolling. API requests derive only from URL state, avoiding duplicate search requests. Category, sort, and DR selections push history entries; debounced typing replaces the current entry. Refresh and Back/Forward restore controls, and Clear filters returns to / without reloading. A minimum
-workspace height keeps shorter result sets from pulling the controls downward.
-Smooth scrolling respects reduced-motion preferences.
-Initial loading shows six skeleton cards. useInfiniteQuery owns catalog pages with
-one 12-result page-size constant. Load More requests the next offset from response
-from/count/total metadata and appends cards. Loaded cards stay visible during next-page
-loading and errors; failures show a compact retry message beside the button.
-The button hides at the end of results or the API's paging window. Search, category,
-DR, and sort changes start at offset zero, with previous filter pages discarded.
-Loaded pages are cached for five minutes when navigating to tool details.
-Initial failures show the full retry state; successful empty responses show
-an empty state. Stats use ai_startups.total and ai_startups.today; unavailable
-metrics and failed statistics are omitted. No category total is inferred from the
-top_ai_categories aggregation. Dates mean discovery, not official product launch.
-Mock cards and fake statistics have been removed.
-Follow [AGENTS.md](./AGENTS.md) for development rules.
+Only the uncommitted search draft is local state. API requests derive from the URL, avoiding a second request path. Presentation helpers validate website URLs, format dates, and provide neutral fallbacks. Details fetch independently, so direct navigation and refresh work without card navigation state. Back preserves the catalog URL and saved scroll when available, with `/` as the direct-visit fallback.
 
-## CORS and deployment
+## Project Structure
 
-On October 3, 2026, direct browser requests failed because FreeSerp returned duplicate
-Access-Control-Allow-Origin headers (combined value: `*, *`). The JSON endpoint works
-outside the browser. Vite therefore uses a scoped `/freeserp-api` development proxy,
-with no backend or additional dependency. The development server needs outgoing
-network permission; sandboxed servers can return 502 when their connection is blocked.
+```text
+public/favicon.svg
+src/
+├── api/                 # FreeSerp requests and response validation
+├── components/          # Catalog, cards, navigation, detail UI
+│   └── ui/              # Button, Badge, keyboard dropdown
+├── constants/           # Filter options and API mappings
+├── hooks/               # Query, URL filters, debounce
+├── pages/               # ExplorePage, ToolDetailsPage
+├── types/               # API and presentation models
+├── utils/               # Domain/URL validation, dates, paging
+├── App.tsx              # Routes
+├── main.tsx             # Router and QueryClient providers
+└── index.css            # Theme, focus styles, CSS animations
+scripts/verify-freeserp.mjs
+docs/screenshots/
+prompts/
+AGENTS.md
+```
 
-Production builds default to `https://freeserp.ai/api.php`. Static deployment requires
-FreeSerp to fix its CORS headers, or a same-origin proxy configured through the optional
-`VITE_FREESERP_BASE_URL` build variable. No key or .env file is required. Vite's development
-proxy is not bundled into production. Deployment also needs an SPA fallback to index.html.
+## AI-Assisted Development
 
-## Tool details
+Codex was used as a development assistant for architecture exploration, component scaffolding, API integration, UI iteration, responsive improvements, refactoring, debugging, and code review. Generated solutions were reviewed against the requirements, tested, and refined to match observed FreeSerp behavior rather than accepted unchanged. The developer retains responsibility for final review and submission.
 
-`/tool/:domain` is a directly shareable route. Cards provide separate View details
-and external website actions. `useToolDetails` requests its own data through
-`getAiToolByDomain`: index=sites, ai_startups=1, q=domain, size=1, sort=relevance.
-The returned domain must match the normalized route domain; unrelated hits mean
-not found. Invalid route domains do not trigger a request. FreeSerp is a discovery
-index, so some established or no-longer-indexed domains will be unavailable.
+## Development Workflow
 
-The page shows a full summary, real categories, available DR/discovery metadata,
-and detected platform information when recognized. Missing values are omitted;
-loading, network errors with retry, and not-found responses have distinct states.
-The shared generated avatar has no external image dependency. Back uses history
-after catalog navigation, restoring serialized search/filter context, cached pages,
-and saved scroll position where possible; direct visits fall back to `/`.
-Production hosting must serve index.html for `/tool/*` as well as `/`.
+Work was split into focused phases: foundation and development rules; UI/design system; FreeSerp integration; pagination and details; catalog URL behavior; final audit and documentation. [prompts/README.md](prompts/README.md) contains concise reconstructions of the phase instructions, not chat transcripts. [AGENTS.md](AGENTS.md) records ongoing engineering rules.
 
-## API limitations
+## Running Locally
 
-FreeSerp sites pagination is limited
-to from + size <= 10,000. Unknown filters are ignored and invalid sorts fall back
-silently, so inspect echoed filters when extending the UI. Newest sites often omit DR,
-and AI niche discovery can also return agencies or research sites.
-See [FreeSerp documentation](https://freeserp.ai/docs.php).
+Use Node.js **22.12+** (or a supported newer release) and npm.
+
+```bash
+npm ci
+npm run dev
+```
+
+Open the local URL printed by Vite. No API key or environment file is needed for development. The scoped `/freeserp-api` Vite proxy needs outgoing network access.
+
+## Build
+
+```bash
+npm run build
+npm run lint
+npm run test:data
+npm run preview
+```
+
+Build generates standard static files in `dist/`. Preview serves that bundle locally; it is not a production server. Data tests exercise request encoding, response validation, fallbacks, URL filters, domain lookup, pagination, and next-page error/retry using controlled responses.
+
+For the Semalt workspace, serve `dist/` and configure an SPA fallback to `index.html` for routes such as `/tool/wiley.com`. Production requests default to the public FreeSerp endpoint. If its CORS headers remain incompatible with browsers, configure an existing same-origin API proxy and build with `VITE_FREESERP_BASE_URL` pointing to it. The proxy must forward GET parameters to `https://freeserp.ai/api.php` and return a browser-compatible response. Vite's development proxy is not bundled into `dist/`; no provider-specific deployment configuration is included.
+
+## Known Limitations
+
+- API availability, coverage, and optional metadata depend on FreeSerp. AI discovery can include agencies or research sites; missing DR or descriptions are handled gracefully.
+- During validation, FreeSerp returned duplicate `Access-Control-Allow-Origin` headers (`*, *`). Development works through the scoped Vite proxy; direct production API access requires corrected upstream CORS or a hosting-provided proxy.
+- Sites paging is limited to `from + size ≤ 10,000`. Load More stops at the API window.
+- Discovery dates are observations, not official launches. A tool may be absent from the index even if its website exists.
+
+## Possible Improvements
+
+Favorites, saved collections, comparison, and advanced filters are intentionally outside this assignment's scope.

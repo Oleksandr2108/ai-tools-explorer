@@ -64,8 +64,9 @@ export function ToolDetailsPage() {
   return (
     <div id="top" className="flex min-h-svh flex-col">
       <title>{tool ? `${tool.title} — AI Tools Explorer` : 'AI Tool — AI Tools Explorer'}</title>
+      <a href="#tool-content" className="sr-only z-50 rounded-lg bg-accent px-4 py-3 text-background focus:not-sr-only focus:fixed focus:left-4 focus:top-4">Skip to tool details</a>
       <Header />
-      <main className="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 lg:px-8">
+      <main id="tool-content" className="mx-auto w-full max-w-7xl flex-1 px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 lg:px-8">
         <div className="mb-5">{back}</div>
         {content}
       </main>
